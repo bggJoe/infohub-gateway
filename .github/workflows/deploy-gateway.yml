@@ -1,4 +1,4 @@
-name: Deploy Gateway
+name: Deploy Gateway to Cloud Run
 
 on:
   workflow_dispatch:
@@ -8,75 +8,78 @@ permissions:
   id-token: write
 
 env:
-  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
-  GCP_REGION: ${{ vars.GCP_REGION }}
-  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-  GCP_DEPLOY_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
-  GCP_RUNTIME_SERVICE_ACCOUNT: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
-  CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
-  IAP_AUDIENCE: ${{ vars.IAP_AUDIENCE }}
-  ALLOWED_USERS: ${{ vars.ALLOWED_USERS }}
-  N8N_TIMEOUT_MS: ${{ vars.N8N_TIMEOUT_MS || '8000' }}
-  N8N_MAX_RETRIES: ${{ vars.N8N_MAX_RETRIES || '1' }}
+  SERVICE_DIR: apps/gateway
+  IMAGE_NAME: infohub-gateway
+  ARTIFACT_REPOSITORY: infohub
 
 jobs:
   deploy:
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout
+      - name: Checkout repository
         uses: actions/checkout@v4
-
-      - name: Setup Node
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-          cache: npm
-          cache-dependency-path: apps/gateway/package-lock.json
-
-      - name: Install
-        working-directory: apps/gateway
-        run: npm ci
-
-      - name: Test
-        working-directory: apps/gateway
-        run: npm test
-
-      - name: Build
-        working-directory: apps/gateway
-        run: npm run build
 
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
-          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
-          service_account: ${{ env.GCP_DEPLOY_SERVICE_ACCOUNT }}
+          workload_identity_provider: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
 
-      - name: Setup gcloud
+      - name: Set up gcloud
         uses: google-github-actions/setup-gcloud@v2
 
-      - name: Prepare Cloud Run environment
-        working-directory: apps/gateway
+      - name: Configure Docker auth for Artifact Registry
         run: |
-          cat > /tmp/infohub-gateway-env.yaml <<EOF
-          NODE_ENV: "production"
+          gcloud auth configure-docker ${{ vars.GCP_REGION }}-docker.pkg.dev --quiet
+
+      - name: Set image URI
+        id: image
+        run: |
+          echo "uri=${{ vars.GCP_REGION }}-docker.pkg.dev/${{ vars.GCP_PROJECT_ID }}/${{ env.ARTIFACT_REPOSITORY }}/${{ env.IMAGE_NAME }}:${GITHUB_SHA}" >> "$GITHUB_OUTPUT"
+
+      - name: Run gateway quality checks
+        working-directory: ${{ env.SERVICE_DIR }}
+        run: |
+          npm ci
+          npm test
+          npm run build
+          npm audit --audit-level=moderate
+
+      - name: Build Docker image
+        working-directory: ${{ env.SERVICE_DIR }}
+        run: |
+          docker build -t "${{ steps.image.outputs.uri }}" .
+
+      - name: Push Docker image
+        run: |
+          docker push "${{ steps.image.outputs.uri }}"
+
+      - name: Generate Cloud Run env vars file
+        run: |
+          cat > cloud-run-env.yaml <<EOF
           AUTH_MODE: "iap"
+          IAP_AUDIENCE: "${{ vars.IAP_AUDIENCE }}"
+          ALLOWED_USERS: "${{ vars.ALLOWED_USERS }}"
+          N8N_TIMEOUT_MS: "${{ vars.N8N_TIMEOUT_MS }}"
+          N8N_MAX_RETRIES: "${{ vars.N8N_MAX_RETRIES }}"
           LOG_LEVEL: "info"
-          IAP_AUDIENCE: "${IAP_AUDIENCE}"
-          ALLOWED_USERS: "${ALLOWED_USERS}"
-          N8N_TIMEOUT_MS: "${N8N_TIMEOUT_MS}"
-          N8N_MAX_RETRIES: "${N8N_MAX_RETRIES}"
           EOF
 
       - name: Deploy to Cloud Run
-        working-directory: apps/gateway
         run: |
-          gcloud run deploy "${CLOUD_RUN_SERVICE}" \
-            --project="${GCP_PROJECT_ID}" \
-            --region="${GCP_REGION}" \
-            --source=. \
-            --port=8080 \
-            --service-account="${GCP_RUNTIME_SERVICE_ACCOUNT}" \
-            --no-allow-unauthenticated \
-            --env-vars-file=/tmp/infohub-gateway-env.yaml \
-            --update-secrets=N8N_ACTION_ITEMS_URL=N8N_ACTION_ITEMS_URL:latest,N8N_API_AUTH_HEADER_NAME=N8N_API_AUTH_HEADER_NAME:latest,N8N_API_AUTH_HEADER_VALUE=N8N_API_AUTH_HEADER_VALUE:latest
+          gcloud run deploy "${{ vars.CLOUD_RUN_SERVICE }}" \
+            --project="${{ vars.GCP_PROJECT_ID }}" \
+            --region="${{ vars.GCP_REGION }}" \
+            --image="${{ steps.image.outputs.uri }}" \
+            --service-account="${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}" \
+            --env-vars-file=cloud-run-env.yaml \
+            --set-secrets=N8N_ACTION_ITEMS_URL=N8N_ACTION_ITEMS_URL:latest,N8N_API_AUTH_HEADER_NAME=N8N_API_AUTH_HEADER_NAME:latest,N8N_API_AUTH_HEADER_VALUE=N8N_API_AUTH_HEADER_VALUE:latest \
+            --no-allow-unauthenticated
+
+      - name: Show deployed service URL
+        run: |
+          gcloud run services describe "${{ vars.CLOUD_RUN_SERVICE }}" \
+            --project="${{ vars.GCP_PROJECT_ID }}" \
+            --region="${{ vars.GCP_REGION }}" \
+            --format='value(status.url)'
