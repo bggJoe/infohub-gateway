@@ -76,7 +76,7 @@ jobs:
             --no-allow-unauthenticated
           env_vars: |
             AUTH_MODE=iap
-            IAP_AUDIENCE=${{ vars.IAP_AUDIENCE }}
+            IAP_AUDIENCE=${{ secrets.IAP_AUDIENCE }}
             ALLOWED_USERS=${{ vars.ALLOWED_USERS }}
             N8N_TIMEOUT_MS=${{ vars.N8N_TIMEOUT_MS }}
             N8N_MAX_RETRIES=${{ vars.N8N_MAX_RETRIES }}
