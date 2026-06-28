@@ -113,6 +113,20 @@ Grant IAP access only to the intended Google identities. Keep `ALLOWED_USERS` in
 
 ## Deployment Verification
 
+Before triggering GitHub Actions, run local preflight with the required non-secret environment variables exported:
+
+```bash
+scripts/preflight-gateway-deploy.sh
+```
+
+The script runs tests, build, audit, Docker build, and checks required Secret Manager secret names when `gcloud` is available. It does not print secret values.
+
+To run only local gates before GCP login is ready:
+
+```bash
+SKIP_GCP_SECRET_CHECK=1 scripts/preflight-gateway-deploy.sh
+```
+
 After GitHub Actions deploys successfully:
 
 ```text

@@ -198,3 +198,5 @@ docker build -t infohub-gateway .
 ```
 
 Docker verification requires Docker Desktop or another Docker daemon to be running.
+
+From the repository root, `scripts/preflight-gateway-deploy.sh` runs the same local gates and checks required deployment variables. It does not print secret values.
