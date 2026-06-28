@@ -1,6 +1,6 @@
 # InfoHub Gateway
 
-Security-focused backend for InfoHub Dashboard. The Gateway authenticates the caller, enforces an email allowlist, calls the n8n Action Items API with a server-side secret, and returns only Dashboard-safe JSON.
+Security-focused backend for InfoHub Dashboard. The Gateway authenticates the caller, enforces an email allowlist, calls the n8n Action Items API with a server-side secret, and returns only Dashboard-safe fields.
 
 ## Local Development
 
@@ -150,7 +150,7 @@ docker build -t infohub-gateway .
 
 The recommended deployment is Cloud Run + IAP + Secret Manager + GitHub Actions OIDC / Workload Identity Federation.
 
-Gateway CI runs automatically on `main` pushes and pull requests. Cloud Run deployment is manual through `.github/workflows/deploy-gateway.yml` so external GCP/IAP settings can be confirmed before deploy.
+Gateway CI runs automatically on `main` pushes and pull requests. Cloud Run deployment is manual through `.github/workflows/deploy-gateway.yml` so external GCP/IAP settings can be confirmed before release.
 
 GitHub Actions should use:
 
@@ -183,7 +183,7 @@ N8N_MAX_RETRIES
 
 `N8N_TIMEOUT_MS` and `N8N_MAX_RETRIES` are optional repository variables. The workflow defaults to `8000` and `1`.
 
-The workflow deploys Cloud Run with the runtime service account from `GCP_RUNTIME_SERVICE_ACCOUNT` and `--no-allow-unauthenticated`. IAP must be configured separately to authenticate users and forward a verifiable IAP JWT.
+The workflow deploys Cloud Run with the runtime service account from `GCP_RUNTIME_SERVICE_ACCOUNT` and `--no-allow-unauthenticated`. IAP must be configured separately to authenticate users and forward a signed identity assertion to the Gateway.
 
 ### Google Secret Manager
 
@@ -211,3 +211,13 @@ docker build -t infohub-gateway .
 Docker verification requires Docker Desktop or another Docker daemon to be running.
 
 From the repository root, `scripts/preflight-gateway-deploy.sh` runs the same local gates and checks required deployment variables. It does not print secret values.
+
+## Further Reading
+
+For complete deployment security analysis and threat modeling:
+
+- `docs/deployment-security-model.md`
+
+For a focused deep-dive on GitHub OIDC and GCP Workload Identity Federation:
+
+- `docs/wif-oidc-explained.md`
