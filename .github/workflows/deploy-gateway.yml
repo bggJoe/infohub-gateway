@@ -2,12 +2,6 @@ name: Deploy Gateway
 
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    paths:
-      - "apps/gateway/**"
-      - ".github/workflows/deploy-gateway.yml"
 
 permissions:
   contents: read

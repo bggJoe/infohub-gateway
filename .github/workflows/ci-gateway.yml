@@ -1,0 +1,47 @@
+name: Gateway CI
+
+on:
+  pull_request:
+    paths:
+      - "apps/gateway/**"
+      - ".github/workflows/ci-gateway.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/gateway/**"
+      - ".github/workflows/ci-gateway.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  gateway:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/gateway/package-lock.json
+
+      - name: Install
+        working-directory: apps/gateway
+        run: npm ci
+
+      - name: Test
+        working-directory: apps/gateway
+        run: npm test
+
+      - name: Build
+        working-directory: apps/gateway
+        run: npm run build
+
+      - name: Audit
+        working-directory: apps/gateway
+        run: npm audit --audit-level=moderate

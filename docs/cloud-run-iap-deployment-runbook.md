@@ -127,6 +127,14 @@ To run only local gates before GCP login is ready:
 SKIP_GCP_SECRET_CHECK=1 scripts/preflight-gateway-deploy.sh
 ```
 
+Trigger deployment manually from GitHub Actions:
+
+```text
+Actions > Deploy Gateway > Run workflow
+```
+
+Regular pushes run `Gateway CI`; they do not deploy to Cloud Run.
+
 After GitHub Actions deploys successfully:
 
 ```text

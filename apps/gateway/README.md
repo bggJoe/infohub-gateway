@@ -150,6 +150,8 @@ docker build -t infohub-gateway .
 
 The recommended deployment is Cloud Run + IAP + Secret Manager + GitHub Actions OIDC / Workload Identity Federation.
 
+Gateway CI runs automatically on `main` pushes and pull requests. Cloud Run deployment is manual through `.github/workflows/deploy-gateway.yml` so external GCP/IAP settings can be confirmed before deploy.
+
 GitHub Actions should use:
 
 ```yaml
