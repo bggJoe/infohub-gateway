@@ -28,8 +28,9 @@ Last updated: 2026-06-28
 
 | Checklist item | Status | Evidence |
 |---|---:|---|
-| `AUTH_MODE=dev` works locally | Done | route test |
-| `AUTH_MODE=iap` requires IAP JWT | Done | route test |
+| `AUTH_MODE=dev` works locally | Done | route and config tests |
+| production requires `AUTH_MODE=iap` | Done | config test |
+| `AUTH_MODE=iap` requires IAP JWT | Done | route and config tests |
 | invalid IAP JWT fails | Done | route test |
 | valid signed IAP JWT works | Done | route test with ES256 JWT and seeded JWKS |
 | email not in allowlist returns 403 | Done | dev and signed IAP route tests |

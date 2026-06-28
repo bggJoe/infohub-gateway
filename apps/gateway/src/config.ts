@@ -47,7 +47,7 @@ export function loadConfig(): AppConfig {
     throw new Error("AUTH_MODE must be dev or iap");
   }
 
-  return {
+  const config = {
     nodeEnv: optional(process.env.NODE_ENV) ?? "development",
     port: parseInteger("PORT", 8080),
     authMode,
@@ -61,6 +61,9 @@ export function loadConfig(): AppConfig {
     n8nMaxRetries: parseInteger("N8N_MAX_RETRIES", 1),
     logLevel: optional(process.env.LOG_LEVEL) ?? "info"
   };
+
+  validateConfig(config);
+  return config;
 }
 
 export function requireN8nConfig(config: AppConfig): {
@@ -74,6 +77,8 @@ export function requireN8nConfig(config: AppConfig): {
     throw new Error("Missing n8n configuration");
   }
 
+  assertHttpUrl(config.n8nActionItemsUrl, "N8N_ACTION_ITEMS_URL");
+
   return {
     url: config.n8nActionItemsUrl,
     headerName: config.n8nApiAuthHeaderName,
@@ -81,4 +86,40 @@ export function requireN8nConfig(config: AppConfig): {
     timeoutMs: config.n8nTimeoutMs,
     maxRetries: config.n8nMaxRetries
   };
+}
+
+function validateConfig(config: AppConfig): void {
+  if (config.nodeEnv === "production" && config.authMode !== "iap") {
+    throw new Error("AUTH_MODE=iap is required in production");
+  }
+
+  if (config.authMode === "iap" && !config.iapAudience) {
+    throw new Error("IAP_AUDIENCE is required when AUTH_MODE=iap");
+  }
+
+  if (config.authMode === "dev" && !config.devUserEmail) {
+    throw new Error("DEV_USER_EMAIL is required when AUTH_MODE=dev");
+  }
+
+  if (config.allowedUsers.length === 0) {
+    throw new Error("ALLOWED_USERS must include at least one email");
+  }
+
+  if (config.n8nTimeoutMs < 1) {
+    throw new Error("N8N_TIMEOUT_MS must be greater than 0");
+  }
+}
+
+function assertHttpUrl(value: string, name: string): void {
+  let parsed: URL;
+
+  try {
+    parsed = new URL(value);
+  } catch {
+    throw new Error(`${name} must be a valid URL`);
+  }
+
+  if (parsed.protocol !== "http:" && parsed.protocol !== "https:") {
+    throw new Error(`${name} must use http or https`);
+  }
 }

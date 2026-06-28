@@ -62,6 +62,15 @@ Production uses `AUTH_MODE=iap`. The app verifies `x-goog-iap-jwt-assertion` wit
 
 The Gateway does not trust `x-goog-authenticated-user-email` by itself.
 
+Startup configuration fails closed:
+
+- `NODE_ENV=production` requires `AUTH_MODE=iap`
+- `AUTH_MODE=iap` requires `IAP_AUDIENCE`
+- `AUTH_MODE=dev` requires `DEV_USER_EMAIL`
+- `ALLOWED_USERS` must include at least one email
+- `N8N_TIMEOUT_MS` must be greater than zero
+- `N8N_ACTION_ITEMS_URL` must be an `http` or `https` URL when action items are requested
+
 ## API
 
 `GET /api/health` returns:
