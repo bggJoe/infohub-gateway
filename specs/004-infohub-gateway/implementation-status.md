@@ -61,7 +61,7 @@ Last updated: 2026-06-28
 |---|---:|---|
 | GitHub Actions uses OIDC / WIF | Done | `.github/workflows/deploy-gateway.yml` uses `id-token: write` and `google-github-actions/auth` |
 | no long-lived service account JSON key | Done | workflow has no JSON key input |
-| Cloud Run env vars configured | Ready for external config | workflow references GitHub repository variables |
+| Cloud Run env vars configured | Ready for external config | workflow writes env-vars YAML from GitHub repository variables |
 | Secret Manager configured | Requires GCP project/secrets | create `N8N_ACTION_ITEMS_URL`, `N8N_API_AUTH_HEADER_NAME`, `N8N_API_AUTH_HEADER_VALUE` |
-| IAP enabled | Requires GCP/IAP setup | configure Cloud Run IAP and `IAP_AUDIENCE` |
-| only allowlisted users can access | Ready for external config | set `ALLOWED_USERS` and IAP policy |
+| IAP enabled | Requires GCP/IAP setup | configure Cloud Run IAP and `IAP_AUDIENCE`; workflow deploys with `--no-allow-unauthenticated` |
+| only allowlisted users can access | Ready for external config | set `ALLOWED_USERS`, IAP policy, and `GCP_RUNTIME_SERVICE_ACCOUNT` |

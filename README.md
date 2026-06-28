@@ -37,6 +37,7 @@ specs/004-infohub-gateway/
   acceptance-checklist.md
 docs/
   architecture-infohub-gateway.md
+  cloud-run-iap-deployment-runbook.md
   security-boundary.md
 ```
 

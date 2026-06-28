@@ -1,0 +1,146 @@
+# Cloud Run + IAP Deployment Runbook
+
+This runbook covers the external Google Cloud and GitHub setup required after the Gateway code is built and tested.
+
+## Required Inputs
+
+```text
+GCP_PROJECT_ID
+GCP_PROJECT_NUMBER
+GCP_REGION
+CLOUD_RUN_SERVICE
+GCP_WORKLOAD_IDENTITY_PROVIDER
+GCP_DEPLOY_SERVICE_ACCOUNT
+GCP_RUNTIME_SERVICE_ACCOUNT
+IAP_AUDIENCE
+ALLOWED_USERS
+N8N_ACTION_ITEMS_URL
+N8N_API_AUTH_HEADER_NAME
+N8N_API_AUTH_HEADER_VALUE
+```
+
+## Google Cloud Resources
+
+Create or confirm:
+
+```text
+Cloud Run service: infohub-gateway
+Runtime service account: infohub-gateway-runtime
+Deploy service account: github-actions-infohub-deploy
+Workload Identity Pool
+Workload Identity Provider for GitHub
+Secret Manager secrets:
+  N8N_ACTION_ITEMS_URL
+  N8N_API_AUTH_HEADER_NAME
+  N8N_API_AUTH_HEADER_VALUE
+IAP enabled for the Cloud Run endpoint
+```
+
+## Runtime Service Account
+
+Grant only secret access needed by the Gateway:
+
+```text
+roles/secretmanager.secretAccessor
+```
+
+Scope secret access to:
+
+```text
+N8N_ACTION_ITEMS_URL
+N8N_API_AUTH_HEADER_NAME
+N8N_API_AUTH_HEADER_VALUE
+```
+
+## Deploy Service Account
+
+Grant the GitHub Actions deploy identity:
+
+```text
+roles/run.admin
+roles/iam.serviceAccountUser on the runtime service account
+roles/artifactregistry.writer if the project uses Artifact Registry builds
+```
+
+Do not create or commit service account JSON keys.
+
+## GitHub Repository Variables
+
+Create repository variables:
+
+```text
+GCP_PROJECT_ID
+GCP_REGION
+GCP_WORKLOAD_IDENTITY_PROVIDER
+GCP_DEPLOY_SERVICE_ACCOUNT
+GCP_RUNTIME_SERVICE_ACCOUNT
+CLOUD_RUN_SERVICE
+IAP_AUDIENCE
+ALLOWED_USERS
+N8N_TIMEOUT_MS
+N8N_MAX_RETRIES
+```
+
+`N8N_TIMEOUT_MS` and `N8N_MAX_RETRIES` may be omitted; the workflow defaults to `8000` and `1`.
+
+## Secret Manager
+
+Create secret versions:
+
+```text
+N8N_ACTION_ITEMS_URL
+N8N_API_AUTH_HEADER_NAME
+N8N_API_AUTH_HEADER_VALUE
+```
+
+The deploy workflow maps these to Cloud Run environment variables with `--update-secrets`.
+
+## IAP
+
+Configure IAP so requests reaching the Gateway include:
+
+```text
+x-goog-iap-jwt-assertion
+```
+
+Set the app env var:
+
+```text
+IAP_AUDIENCE=/projects/{PROJECT_NUMBER}/locations/{REGION}/services/{SERVICE_NAME}
+```
+
+Grant IAP access only to the intended Google identities. Keep `ALLOWED_USERS` in the app as a second allowlist layer.
+
+## Deployment Verification
+
+After GitHub Actions deploys successfully:
+
+```text
+GET /api/health
+```
+
+Expected:
+
+```json
+{
+  "ok": true,
+  "service": "infohub-gateway",
+  "version": "0.1.0"
+}
+```
+
+Verify auth and data minimization:
+
+```text
+Unauthenticated request: rejected by IAP or Gateway
+Valid IAP user not in ALLOWED_USERS: 403
+Valid IAP user in ALLOWED_USERS: 200
+GET /api/action-items?status=new&limit=50: returns only allowlisted fields
+GET /api/action-items?status=invalid: 400
+GET /api/action-items?limit=51: 400
+n8n unavailable or slow: safe upstream error without n8n URL or secret
+```
+
+## Rotation
+
+Rotate n8n secrets by adding a new Secret Manager version. No code change is required.

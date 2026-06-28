@@ -18,9 +18,12 @@ env:
   GCP_REGION: ${{ vars.GCP_REGION }}
   GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
   GCP_DEPLOY_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+  GCP_RUNTIME_SERVICE_ACCOUNT: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
   CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
   IAP_AUDIENCE: ${{ vars.IAP_AUDIENCE }}
   ALLOWED_USERS: ${{ vars.ALLOWED_USERS }}
+  N8N_TIMEOUT_MS: ${{ vars.N8N_TIMEOUT_MS || '8000' }}
+  N8N_MAX_RETRIES: ${{ vars.N8N_MAX_RETRIES || '1' }}
 
 jobs:
   deploy:
@@ -67,6 +70,8 @@ jobs:
           LOG_LEVEL: "info"
           IAP_AUDIENCE: "${IAP_AUDIENCE}"
           ALLOWED_USERS: "${ALLOWED_USERS}"
+          N8N_TIMEOUT_MS: "${N8N_TIMEOUT_MS}"
+          N8N_MAX_RETRIES: "${N8N_MAX_RETRIES}"
           EOF
 
       - name: Deploy to Cloud Run
@@ -77,5 +82,7 @@ jobs:
             --region="${GCP_REGION}" \
             --source=. \
             --port=8080 \
+            --service-account="${GCP_RUNTIME_SERVICE_ACCOUNT}" \
+            --no-allow-unauthenticated \
             --env-vars-file=/tmp/infohub-gateway-env.yaml \
             --update-secrets=N8N_ACTION_ITEMS_URL=N8N_ACTION_ITEMS_URL:latest,N8N_API_AUTH_HEADER_NAME=N8N_API_AUTH_HEADER_NAME:latest,N8N_API_AUTH_HEADER_VALUE=N8N_API_AUTH_HEADER_VALUE:latest

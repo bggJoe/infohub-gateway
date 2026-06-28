@@ -160,12 +160,19 @@ GCP_PROJECT_ID
 GCP_REGION
 GCP_WORKLOAD_IDENTITY_PROVIDER
 GCP_DEPLOY_SERVICE_ACCOUNT
+GCP_RUNTIME_SERVICE_ACCOUNT
 CLOUD_RUN_SERVICE
 IAP_AUDIENCE
 ALLOWED_USERS
+N8N_TIMEOUT_MS
+N8N_MAX_RETRIES
 ```
 
 `ALLOWED_USERS` may contain comma-separated addresses. The deploy workflow writes Cloud Run app configuration to an env-vars YAML file so commas are preserved correctly.
+
+`N8N_TIMEOUT_MS` and `N8N_MAX_RETRIES` are optional repository variables. The workflow defaults to `8000` and `1`.
+
+The workflow deploys Cloud Run with the runtime service account from `GCP_RUNTIME_SERVICE_ACCOUNT` and `--no-allow-unauthenticated`. IAP must be configured separately to authenticate users and forward a verifiable IAP JWT.
 
 ### Google Secret Manager
 
