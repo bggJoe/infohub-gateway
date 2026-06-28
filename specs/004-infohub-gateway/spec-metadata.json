@@ -1,0 +1,12 @@
+{
+  "feature": "004-infohub-gateway",
+  "created_at": "2026-06-28",
+  "recommended_deployment": "Google Cloud Run + IAP + Secret Manager + GitHub Actions OIDC/WIF",
+  "primary_goal": "Build a security-focused Gateway between Frontend Dashboard and n8n Action Items API",
+  "non_goals": [
+    "Direct Gmail access",
+    "Write API",
+    "Full frontend dashboard",
+    "Dify/RAG integration"
+  ]
+}
