@@ -3,7 +3,7 @@
 ## 核心原則
 
 1. Frontend 不直接呼叫 n8n。
-2. Frontend 不持有 n8n API key / header secret / JWT secret。
+2. Frontend 不持有 n8n API key / header secret / downstream JWT private key。
 3. Gateway 是唯一可以呼叫 n8n Action Items API 的應用層元件。
 4. Gateway 必須驗證使用者身份。
 5. Gateway 必須做 email allowlist。

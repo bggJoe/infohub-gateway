@@ -6,7 +6,7 @@
 
 ```text
 n8n Webhook URL
-n8n API header secret
+n8n downstream JWT private key
 Gmail-derived summaries
 Action items
 User identity
@@ -16,7 +16,7 @@ Data Table metadata
 ### Threats
 
 ```text
-Browser exfiltrates n8n secret
+Browser exfiltrates n8n secret or downstream JWT
 Unauthenticated user calls n8n webhook
 Forged identity header
 Prompt-injected email content appears in Dashboard
@@ -33,11 +33,36 @@ Overly broad GitHub Actions cloud permissions
 
 Frontend must call only Gateway routes.
 
-### SC-002: Gateway-held n8n secret
+### SC-002: Gateway-held n8n credential
 
-`N8N_API_AUTH_HEADER_VALUE` must be stored in Secret Manager or deployment secret store.
+Production must use:
 
-It must never be committed to GitHub.
+```text
+N8N_AUTH_MODE=jwt
+```
+
+`N8N_JWT_PRIVATE_KEY_PEM` must be stored in Secret Manager or a deployment secret store.
+
+Gateway must sign a short-lived RS256 JWT for n8n with:
+
+```text
+iss
+aud
+sub
+email
+scope
+method
+path
+iat
+exp
+jti
+```
+
+Default `exp` is 60 seconds after `iat`.
+
+Legacy `N8N_AUTH_MODE=header` is retained only as fallback outside production.
+
+Private keys, JWTs, and legacy header secrets must never be committed to GitHub.
 
 ### SC-003: IAP JWT validation
 
@@ -117,6 +142,7 @@ Production error responses must not include:
 stack trace
 n8n URL
 n8n secret
+downstream JWT
 raw upstream response
 ```
 

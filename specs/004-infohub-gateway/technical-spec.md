@@ -75,8 +75,12 @@ IAP_AUDIENCE=/projects/{PROJECT_NUMBER}/locations/{REGION}/services/{SERVICE_NAM
 ALLOWED_USERS=joelovesband@gmail.com
 
 N8N_ACTION_ITEMS_URL=https://...
-N8N_API_AUTH_HEADER_NAME=x-infohub-api-key
-N8N_API_AUTH_HEADER_VALUE=...
+N8N_AUTH_MODE=jwt
+N8N_JWT_PRIVATE_KEY_PEM=...
+N8N_JWT_ISSUER=infohub-gateway
+N8N_JWT_AUDIENCE=infohub-n8n
+N8N_JWT_SCOPE=infohub:action-items:read
+N8N_JWT_TTL_SECONDS=60
 N8N_TIMEOUT_MS=8000
 N8N_MAX_RETRIES=1
 
@@ -126,7 +130,31 @@ Internal call to n8n:
 
 ```http
 GET {N8N_ACTION_ITEMS_URL}?status={status}&limit={limit}
-{N8N_API_AUTH_HEADER_NAME}: {N8N_API_AUTH_HEADER_VALUE}
+Authorization: Bearer <gateway-signed-jwt>
+```
+
+Downstream JWT:
+
+```text
+alg = RS256
+iss = N8N_JWT_ISSUER
+aud = N8N_JWT_AUDIENCE
+sub = verified IAP sub or user email
+email = verified user email
+scope = N8N_JWT_SCOPE
+method = GET
+path = /api/action-items
+iat
+exp = iat + N8N_JWT_TTL_SECONDS, default 60
+jti
+```
+
+Legacy fallback:
+
+```text
+N8N_AUTH_MODE=header
+N8N_API_AUTH_HEADER_NAME
+N8N_API_AUTH_HEADER_VALUE
 ```
 
 Gateway response:
@@ -278,7 +306,8 @@ error_code
 Forbidden in logs:
 
 ```text
-N8N_API_AUTH_HEADER_VALUE
+N8N_JWT_PRIVATE_KEY_PEM
+downstream JWT
 raw email body
 request authorization headers
 full n8n response

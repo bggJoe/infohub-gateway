@@ -25,8 +25,7 @@ Google Cloud project
 Cloud Run service: infohub-gateway
 Secret Manager secrets:
   - N8N_ACTION_ITEMS_URL
-  - N8N_API_AUTH_HEADER_NAME
-  - N8N_API_AUTH_HEADER_VALUE
+  - N8N_JWT_PRIVATE_KEY_PEM
 Workload Identity Pool
 Workload Identity Provider for GitHub
 Deploy service account
@@ -92,6 +91,11 @@ IAP_AUDIENCE=/projects/{PROJECT_NUMBER}/locations/{REGION}/services/infohub-gate
 ALLOWED_USERS=joelovesband@gmail.com
 N8N_TIMEOUT_MS=8000
 N8N_MAX_RETRIES=1
+N8N_AUTH_MODE=jwt
+N8N_JWT_ISSUER=infohub-gateway
+N8N_JWT_AUDIENCE=infohub-n8n
+N8N_JWT_SCOPE=infohub:action-items:read
+N8N_JWT_TTL_SECONDS=60
 LOG_LEVEL=info
 ```
 
@@ -99,8 +103,7 @@ Secrets:
 
 ```text
 N8N_ACTION_ITEMS_URL
-N8N_API_AUTH_HEADER_NAME
-N8N_API_AUTH_HEADER_VALUE
+N8N_JWT_PRIVATE_KEY_PEM
 ```
 
 ## 7. GitHub Actions workflow

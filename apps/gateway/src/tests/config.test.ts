@@ -13,8 +13,12 @@ function setBaseEnv(): void {
   process.env.DEV_USER_EMAIL = "joelovesband@gmail.com";
   process.env.ALLOWED_USERS = "joelovesband@gmail.com";
   process.env.N8N_ACTION_ITEMS_URL = "https://n8n.example.test/webhook/action-items";
-  process.env.N8N_API_AUTH_HEADER_NAME = "x-infohub-api-key";
-  process.env.N8N_API_AUTH_HEADER_VALUE = "secret";
+  process.env.N8N_AUTH_MODE = "jwt";
+  process.env.N8N_JWT_PRIVATE_KEY_PEM = "test-private-key-placeholder";
+  process.env.N8N_JWT_ISSUER = "infohub-gateway";
+  process.env.N8N_JWT_AUDIENCE = "infohub-n8n";
+  delete process.env.N8N_API_AUTH_HEADER_NAME;
+  delete process.env.N8N_API_AUTH_HEADER_VALUE;
 }
 
 describe("loadConfig", () => {
@@ -26,6 +30,10 @@ describe("loadConfig", () => {
       authMode: "dev",
       devUserEmail: "joelovesband@gmail.com",
       allowedUsers: ["joelovesband@gmail.com"],
+      n8nAuthMode: "jwt",
+      n8nJwtIssuer: "infohub-gateway",
+      n8nJwtAudience: "infohub-n8n",
+      n8nJwtTtlSeconds: 60,
       n8nTimeoutMs: 8000,
       n8nMaxRetries: 1
     });
@@ -66,6 +74,30 @@ describe("loadConfig", () => {
 
     expect(() => loadConfig()).toThrow("N8N_TIMEOUT_MS must be greater than 0");
   });
+
+  it("rejects header n8n auth in production", () => {
+    setBaseEnv();
+    process.env.NODE_ENV = "production";
+    process.env.AUTH_MODE = "iap";
+    process.env.IAP_AUDIENCE = "/projects/123/locations/asia-east1/services/infohub-gateway";
+    process.env.N8N_AUTH_MODE = "header";
+
+    expect(() => loadConfig()).toThrow("N8N_AUTH_MODE=jwt is required in production");
+  });
+
+  it("rejects invalid n8n auth mode", () => {
+    setBaseEnv();
+    process.env.N8N_AUTH_MODE = "basic";
+
+    expect(() => loadConfig()).toThrow("N8N_AUTH_MODE must be jwt or header");
+  });
+
+  it("rejects zero downstream JWT ttl", () => {
+    setBaseEnv();
+    process.env.N8N_JWT_TTL_SECONDS = "0";
+
+    expect(() => loadConfig()).toThrow("N8N_JWT_TTL_SECONDS must be greater than 0");
+  });
 });
 
 describe("requireN8nConfig", () => {
@@ -85,5 +117,29 @@ describe("requireN8nConfig", () => {
     const config = loadConfig();
 
     expect(() => requireN8nConfig(config)).toThrow("N8N_ACTION_ITEMS_URL must use http or https");
+  });
+
+  it("requires JWT auth settings in jwt mode", () => {
+    setBaseEnv();
+    delete process.env.N8N_JWT_PRIVATE_KEY_PEM;
+
+    const config = loadConfig();
+
+    expect(() => requireN8nConfig(config)).toThrow("Missing n8n JWT auth configuration");
+  });
+
+  it("supports legacy header auth fallback outside production", () => {
+    setBaseEnv();
+    process.env.N8N_AUTH_MODE = "header";
+    process.env.N8N_API_AUTH_HEADER_NAME = "x-infohub-api-key";
+    process.env.N8N_API_AUTH_HEADER_VALUE = "secret";
+
+    const config = loadConfig();
+
+    expect(requireN8nConfig(config)).toMatchObject({
+      authMode: "header",
+      headerName: "x-infohub-api-key",
+      headerValue: "secret"
+    });
   });
 });

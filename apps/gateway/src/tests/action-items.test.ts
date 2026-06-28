@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
-import { exportJWK, generateKeyPair, SignJWT } from "jose";
+import { afterEach, beforeAll, describe, expect, it, vi } from "vitest";
+import { exportJWK, exportPKCS8, generateKeyPair, SignJWT } from "jose";
 import { buildServer } from "../server";
 import type { AppConfig } from "../config";
 import { setIapJwksCacheForTests } from "../auth/verify-iap";
 
 const originalFetch = globalThis.fetch;
+let testN8nPrivateKeyPem = "";
 
 afterEach(() => {
   globalThis.fetch = originalFetch;
@@ -20,14 +21,25 @@ function config(overrides: Partial<AppConfig> = {}): AppConfig {
     allowedUsers: ["joelovesband@gmail.com"],
     devUserEmail: "joelovesband@gmail.com",
     n8nActionItemsUrl: "https://n8n.example.test/webhook/action-items",
-    n8nApiAuthHeaderName: "x-infohub-api-key",
-    n8nApiAuthHeaderValue: "secret",
+    n8nAuthMode: "jwt",
+    n8nApiAuthHeaderName: "",
+    n8nApiAuthHeaderValue: "",
+    n8nJwtPrivateKeyPem: testN8nPrivateKeyPem,
+    n8nJwtIssuer: "infohub-gateway",
+    n8nJwtAudience: "infohub-n8n",
+    n8nJwtScope: "infohub:action-items:read",
+    n8nJwtTtlSeconds: 60,
     n8nTimeoutMs: 8000,
     n8nMaxRetries: 0,
     logLevel: "silent",
     ...overrides
   };
 }
+
+beforeAll(async () => {
+  const { privateKey } = await generateKeyPair("RS256");
+  testN8nPrivateKeyPem = await exportPKCS8(privateKey);
+});
 
 async function createIapJwt(email: string, audience: string) {
   const { privateKey, publicKey } = await generateKeyPair("ES256");

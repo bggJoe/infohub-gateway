@@ -15,8 +15,11 @@ GCP_RUNTIME_SERVICE_ACCOUNT
 IAP_AUDIENCE
 ALLOWED_USERS
 N8N_ACTION_ITEMS_URL
-N8N_API_AUTH_HEADER_NAME
-N8N_API_AUTH_HEADER_VALUE
+N8N_JWT_PRIVATE_KEY_PEM
+N8N_JWT_AUDIENCE
+N8N_JWT_ISSUER
+N8N_JWT_SCOPE
+N8N_JWT_TTL_SECONDS
 ```
 
 ## Google Cloud Resources
@@ -31,8 +34,7 @@ Workload Identity Pool
 Workload Identity Provider for GitHub
 Secret Manager secrets:
   N8N_ACTION_ITEMS_URL
-  N8N_API_AUTH_HEADER_NAME
-  N8N_API_AUTH_HEADER_VALUE
+  N8N_JWT_PRIVATE_KEY_PEM
 IAP enabled for the Cloud Run endpoint
 ```
 
@@ -48,8 +50,7 @@ Scope secret access to:
 
 ```text
 N8N_ACTION_ITEMS_URL
-N8N_API_AUTH_HEADER_NAME
-N8N_API_AUTH_HEADER_VALUE
+N8N_JWT_PRIVATE_KEY_PEM
 ```
 
 ## Deploy Service Account
@@ -79,9 +80,13 @@ IAP_AUDIENCE
 ALLOWED_USERS
 N8N_TIMEOUT_MS
 N8N_MAX_RETRIES
+N8N_JWT_AUDIENCE
+N8N_JWT_ISSUER
+N8N_JWT_SCOPE
+N8N_JWT_TTL_SECONDS
 ```
 
-`N8N_TIMEOUT_MS` and `N8N_MAX_RETRIES` may be omitted; the workflow defaults to `8000` and `1`.
+`N8N_JWT_ISSUER`, `N8N_JWT_SCOPE`, `N8N_JWT_TTL_SECONDS`, `N8N_TIMEOUT_MS`, and `N8N_MAX_RETRIES` may be omitted; the workflow defaults to `infohub-gateway`, `infohub:action-items:read`, `60`, `8000`, and `1`.
 
 ## Secret Manager
 
@@ -89,11 +94,30 @@ Create secret versions:
 
 ```text
 N8N_ACTION_ITEMS_URL
-N8N_API_AUTH_HEADER_NAME
-N8N_API_AUTH_HEADER_VALUE
+N8N_JWT_PRIVATE_KEY_PEM
 ```
 
 The deploy workflow maps these to Cloud Run environment variables with `--update-secrets`.
+
+n8n must verify Gateway-signed JWTs from:
+
+```text
+Authorization: Bearer <jwt>
+```
+
+Required JWT checks:
+
+```text
+alg = RS256
+iss = N8N_JWT_ISSUER
+aud = N8N_JWT_AUDIENCE
+exp / iat
+scope = N8N_JWT_SCOPE
+method = GET
+path = /api/action-items
+email present
+jti present
+```
 
 ## IAP
 

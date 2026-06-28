@@ -40,7 +40,7 @@ Last updated: 2026-06-28
 
 | Checklist item | Status | Evidence |
 |---|---:|---|
-| Gateway calls n8n using server-side secret only | Done | `N8nClient` sets configured auth header server-side |
+| Gateway calls n8n using server-side credential only | Done | `N8nClient` signs short-lived RS256 JWTs or uses legacy header fallback |
 | n8n URL is not exposed to frontend | Done | error tests assert URL is not returned |
 | n8n error is handled safely | Done | client and route tests |
 | n8n timeout is handled safely | Done | client and route tests |
@@ -63,6 +63,6 @@ Last updated: 2026-06-28
 | GitHub Actions uses OIDC / WIF | Done | `.github/workflows/deploy-gateway.yml` uses `id-token: write` and `google-github-actions/auth` |
 | no long-lived service account JSON key | Done | workflow has no JSON key input |
 | Cloud Run env vars configured | Ready for external config | workflow writes env-vars YAML from GitHub repository variables |
-| Secret Manager configured | Requires GCP project/secrets | create `N8N_ACTION_ITEMS_URL`, `N8N_API_AUTH_HEADER_NAME`, `N8N_API_AUTH_HEADER_VALUE` |
+| Secret Manager configured | Requires GCP project/secrets | create `N8N_ACTION_ITEMS_URL`, `N8N_JWT_PRIVATE_KEY_PEM` |
 | IAP enabled | Requires GCP/IAP setup | configure Cloud Run IAP and `IAP_AUDIENCE`; workflow deploys with `--no-allow-unauthenticated` |
 | only allowlisted users can access | Ready for external config | set `ALLOWED_USERS`, IAP policy, and `GCP_RUNTIME_SERVICE_ACCOUNT` |

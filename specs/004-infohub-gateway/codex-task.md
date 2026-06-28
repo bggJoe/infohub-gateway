@@ -97,9 +97,27 @@ Call n8n:
 
 ```text
 N8N_ACTION_ITEMS_URL
-N8N_API_AUTH_HEADER_NAME
-N8N_API_AUTH_HEADER_VALUE
+N8N_AUTH_MODE=jwt
+N8N_JWT_PRIVATE_KEY_PEM
+N8N_JWT_ISSUER
+N8N_JWT_AUDIENCE
+N8N_JWT_SCOPE
+N8N_JWT_TTL_SECONDS
 ```
+
+Gateway must call n8n with:
+
+```text
+Authorization: Bearer <gateway-signed-jwt>
+```
+
+JWT claims:
+
+```text
+iss, aud, sub, email, scope, method, path, iat, exp, jti
+```
+
+Use RS256 and default `exp` to 60 seconds. Preserve `N8N_AUTH_MODE=header` only as legacy fallback.
 
 Return only Dashboard-safe JSON.
 

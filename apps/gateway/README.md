@@ -40,14 +40,26 @@ AUTH_MODE=iap
 IAP_AUDIENCE=/projects/{PROJECT_NUMBER}/locations/{REGION}/services/infohub-gateway
 ALLOWED_USERS=joelovesband@gmail.com
 N8N_ACTION_ITEMS_URL=https://...
-N8N_API_AUTH_HEADER_NAME=x-infohub-api-key
-N8N_API_AUTH_HEADER_VALUE=...
+N8N_AUTH_MODE=jwt
+N8N_JWT_PRIVATE_KEY_PEM=...
+N8N_JWT_ISSUER=infohub-gateway
+N8N_JWT_AUDIENCE=infohub-n8n
+N8N_JWT_SCOPE=infohub:action-items:read
+N8N_JWT_TTL_SECONDS=60
 N8N_TIMEOUT_MS=8000
 N8N_MAX_RETRIES=1
 LOG_LEVEL=info
 ```
 
-`N8N_ACTION_ITEMS_URL`, `N8N_API_AUTH_HEADER_NAME`, and `N8N_API_AUTH_HEADER_VALUE` should come from Secret Manager or another deployment secret store in production.
+`N8N_ACTION_ITEMS_URL` and `N8N_JWT_PRIVATE_KEY_PEM` should come from Secret Manager or another deployment secret store in production.
+
+Legacy fallback is still available outside production:
+
+```text
+N8N_AUTH_MODE=header
+N8N_API_AUTH_HEADER_NAME=x-infohub-api-key
+N8N_API_AUTH_HEADER_VALUE=...
+```
 
 ## Security Model
 
@@ -70,6 +82,8 @@ Startup configuration fails closed:
 - `ALLOWED_USERS` must include at least one email
 - `N8N_TIMEOUT_MS` must be greater than zero
 - `N8N_ACTION_ITEMS_URL` must be an `http` or `https` URL when action items are requested
+- `NODE_ENV=production` requires `N8N_AUTH_MODE=jwt`
+- `N8N_AUTH_MODE=jwt` requires `N8N_JWT_PRIVATE_KEY_PEM`, `N8N_JWT_ISSUER`, and `N8N_JWT_AUDIENCE`
 
 ## API
 
@@ -91,6 +105,29 @@ limit=1..50
 ```
 
 The Gateway always sends `action_required=true` to n8n and never passes arbitrary query parameters through.
+
+In production the Gateway authenticates to n8n with:
+
+```text
+Authorization: Bearer <gateway-signed-jwt>
+```
+
+The downstream JWT is signed with RS256 and includes:
+
+```text
+iss
+aud
+sub
+email
+scope
+method
+path
+iat
+exp
+jti
+```
+
+The default JWT lifetime is 60 seconds.
 
 ## Output Redaction
 
@@ -175,13 +212,17 @@ GCP_RUNTIME_SERVICE_ACCOUNT
 CLOUD_RUN_SERVICE
 IAP_AUDIENCE
 ALLOWED_USERS
+N8N_JWT_AUDIENCE
+N8N_JWT_ISSUER
+N8N_JWT_SCOPE
+N8N_JWT_TTL_SECONDS
 N8N_TIMEOUT_MS
 N8N_MAX_RETRIES
 ```
 
 `ALLOWED_USERS` may contain comma-separated addresses. The deploy workflow writes Cloud Run app configuration to an env-vars YAML file so commas are preserved correctly.
 
-`N8N_TIMEOUT_MS` and `N8N_MAX_RETRIES` are optional repository variables. The workflow defaults to `8000` and `1`.
+`N8N_JWT_ISSUER`, `N8N_JWT_SCOPE`, `N8N_JWT_TTL_SECONDS`, `N8N_TIMEOUT_MS`, and `N8N_MAX_RETRIES` are optional repository variables. The workflow defaults to `infohub-gateway`, `infohub:action-items:read`, `60`, `8000`, and `1`.
 
 The workflow deploys Cloud Run with the runtime service account from `GCP_RUNTIME_SERVICE_ACCOUNT` and `--no-allow-unauthenticated`. IAP must be configured separately to authenticate users and forward a signed identity assertion to the Gateway.
 
@@ -191,8 +232,7 @@ Create these Secret Manager secrets in the target Google Cloud project:
 
 ```text
 N8N_ACTION_ITEMS_URL
-N8N_API_AUTH_HEADER_NAME
-N8N_API_AUTH_HEADER_VALUE
+N8N_JWT_PRIVATE_KEY_PEM
 ```
 
 The workflow references `latest` for each secret. Rotate by adding a new secret version, not by changing code.

@@ -61,8 +61,13 @@ jobs:
           AUTH_MODE: "iap"
           IAP_AUDIENCE: "${{ vars.IAP_AUDIENCE }}"
           ALLOWED_USERS: "${{ vars.ALLOWED_USERS }}"
-          N8N_TIMEOUT_MS: "${{ vars.N8N_TIMEOUT_MS }}"
-          N8N_MAX_RETRIES: "${{ vars.N8N_MAX_RETRIES }}"
+          N8N_AUTH_MODE: "jwt"
+          N8N_JWT_ISSUER: "${{ vars.N8N_JWT_ISSUER || 'infohub-gateway' }}"
+          N8N_JWT_AUDIENCE: "${{ vars.N8N_JWT_AUDIENCE }}"
+          N8N_JWT_SCOPE: "${{ vars.N8N_JWT_SCOPE || 'infohub:action-items:read' }}"
+          N8N_JWT_TTL_SECONDS: "${{ vars.N8N_JWT_TTL_SECONDS || '60' }}"
+          N8N_TIMEOUT_MS: "${{ vars.N8N_TIMEOUT_MS || '8000' }}"
+          N8N_MAX_RETRIES: "${{ vars.N8N_MAX_RETRIES || '1' }}"
           LOG_LEVEL: "info"
           EOF
 
@@ -74,7 +79,7 @@ jobs:
             --image="${{ steps.image.outputs.uri }}" \
             --service-account="${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}" \
             --env-vars-file=cloud-run-env.yaml \
-            --set-secrets=N8N_ACTION_ITEMS_URL=N8N_ACTION_ITEMS_URL:latest,N8N_API_AUTH_HEADER_NAME=N8N_API_AUTH_HEADER_NAME:latest,N8N_API_AUTH_HEADER_VALUE=N8N_API_AUTH_HEADER_VALUE:latest \
+            --set-secrets=N8N_ACTION_ITEMS_URL=N8N_ACTION_ITEMS_URL:latest,N8N_JWT_PRIVATE_KEY_PEM=N8N_JWT_PRIVATE_KEY_PEM:latest \
             --no-allow-unauthenticated
 
       - name: Show deployed service URL

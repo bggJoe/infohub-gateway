@@ -16,7 +16,11 @@ export async function registerActionItemsRoute(
 
     const filters = validateActionItemsQuery(request.query as Record<string, unknown>);
     const client = new N8nClient(requireN8nConfig(config));
-    const result = await client.fetchActionItems(filters);
+    const result = await client.fetchActionItems(filters, {
+      auth,
+      method: request.method,
+      path: "/api/action-items"
+    });
     request.n8nStatus = result.status;
 
     const data = redactActionItems(result.rows);

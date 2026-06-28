@@ -97,13 +97,40 @@ action_required = true
 
 Gateway 應呼叫既有 n8n Action Items API。
 
-n8n URL 與 secret 必須由環境變數或 Secret Manager 注入。
+n8n URL 與 downstream JWT signing key 必須由環境變數或 Secret Manager 注入。
 
 ```text
 N8N_ACTION_ITEMS_URL
-N8N_API_AUTH_HEADER_NAME
-N8N_API_AUTH_HEADER_VALUE
+N8N_AUTH_MODE=jwt
+N8N_JWT_PRIVATE_KEY_PEM
+N8N_JWT_ISSUER
+N8N_JWT_AUDIENCE
+N8N_JWT_SCOPE
+N8N_JWT_TTL_SECONDS
 ```
+
+Gateway 呼叫 n8n 時使用：
+
+```text
+Authorization: Bearer <gateway-signed-jwt>
+```
+
+JWT 必須使用 RS256，且包含：
+
+```text
+iss
+aud
+sub
+email
+scope
+method
+path
+iat
+exp
+jti
+```
+
+`exp` 預設 60 秒。`N8N_AUTH_MODE=header` 僅保留為 legacy fallback。
 
 ### FR-004: Output redaction
 
