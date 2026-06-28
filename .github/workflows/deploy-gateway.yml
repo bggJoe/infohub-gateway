@@ -1,0 +1,70 @@
+name: Deploy Gateway
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/gateway/**"
+      - ".github/workflows/deploy-gateway.yml"
+
+permissions:
+  contents: read
+  id-token: write
+
+env:
+  GCP_PROJECT_ID: ${{ vars.GCP_PROJECT_ID }}
+  GCP_REGION: ${{ vars.GCP_REGION }}
+  GCP_WORKLOAD_IDENTITY_PROVIDER: ${{ vars.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+  GCP_DEPLOY_SERVICE_ACCOUNT: ${{ vars.GCP_DEPLOY_SERVICE_ACCOUNT }}
+  CLOUD_RUN_SERVICE: ${{ vars.CLOUD_RUN_SERVICE }}
+  IAP_AUDIENCE: ${{ vars.IAP_AUDIENCE }}
+  ALLOWED_USERS: ${{ vars.ALLOWED_USERS }}
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/gateway/package-lock.json
+
+      - name: Install
+        working-directory: apps/gateway
+        run: npm ci
+
+      - name: Test
+        working-directory: apps/gateway
+        run: npm test
+
+      - name: Build
+        working-directory: apps/gateway
+        run: npm run build
+
+      - name: Authenticate to Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: ${{ env.GCP_WORKLOAD_IDENTITY_PROVIDER }}
+          service_account: ${{ env.GCP_DEPLOY_SERVICE_ACCOUNT }}
+
+      - name: Setup gcloud
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy to Cloud Run
+        working-directory: apps/gateway
+        run: |
+          gcloud run deploy "${CLOUD_RUN_SERVICE}" \
+            --project="${GCP_PROJECT_ID}" \
+            --region="${GCP_REGION}" \
+            --source=. \
+            --port=8080 \
+            --set-env-vars=NODE_ENV=production,AUTH_MODE=iap,LOG_LEVEL=info,IAP_AUDIENCE="${IAP_AUDIENCE}",ALLOWED_USERS="${ALLOWED_USERS}" \
+            --update-secrets=N8N_ACTION_ITEMS_URL=N8N_ACTION_ITEMS_URL:latest,N8N_API_AUTH_HEADER_NAME=N8N_API_AUTH_HEADER_NAME:latest,N8N_API_AUTH_HEADER_VALUE=N8N_API_AUTH_HEADER_VALUE:latest
