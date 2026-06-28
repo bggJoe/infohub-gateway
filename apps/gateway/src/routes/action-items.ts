@@ -12,16 +12,14 @@ export async function registerActionItemsRoute(
 ): Promise<void> {
   server.get("/api/action-items", async (request) => {
     const auth = await authenticateRequest(request, config);
+    request.authContext = auth;
+
     const filters = validateActionItemsQuery(request.query as Record<string, unknown>);
     const client = new N8nClient(requireN8nConfig(config));
-    const rows = await client.fetchActionItems(filters);
-    const data = redactActionItems(rows);
+    const result = await client.fetchActionItems(filters);
+    request.n8nStatus = result.status;
 
-    request.log.info({
-      route: "/api/action-items",
-      user_email: auth.email,
-      count: data.length
-    });
+    const data = redactActionItems(result.rows);
 
     return {
       ok: true,

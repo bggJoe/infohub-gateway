@@ -112,6 +112,23 @@ thread_id
 
 Do not expose raw email bodies, Gmail headers, attachments, n8n URLs, API secrets, tokens, or arbitrary upstream response fields.
 
+## Observability
+
+The Gateway writes structured JSON logs with request-level metadata:
+
+```text
+request_id
+method
+path
+status_code
+duration_ms
+user_email
+n8n_status
+error_code
+```
+
+Logs do not include full request headers, n8n secrets, raw email bodies, attachments, or raw n8n responses.
+
 ## Test And Build
 
 ```bash

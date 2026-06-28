@@ -23,11 +23,15 @@ describe("N8nClient", () => {
     const fetchMock = vi.fn(async () => Response.json({ data: [{ id: "1" }] }));
     globalThis.fetch = fetchMock as typeof fetch;
 
-    await client().fetchActionItems({ status: "new", limit: 20 });
+    const result = await client().fetchActionItems({ status: "new", limit: 20 });
 
     const [url, init] = fetchMock.mock.calls[0];
     const parsedUrl = new URL(String(url));
 
+    expect(result).toEqual({
+      rows: [{ id: "1" }],
+      status: 200
+    });
     expect(parsedUrl.searchParams.get("status")).toBe("new");
     expect(parsedUrl.searchParams.get("limit")).toBe("20");
     expect(parsedUrl.searchParams.get("action_required")).toBe("true");

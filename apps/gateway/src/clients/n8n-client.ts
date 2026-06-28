@@ -3,12 +3,19 @@ import type { ActionItemsQuery } from "../security/validation";
 export class N8nClientError extends Error {
   readonly code: "N8N_UPSTREAM_ERROR" | "N8N_TIMEOUT";
   readonly statusCode: number;
+  readonly upstreamStatus?: number;
 
-  constructor(code: N8nClientError["code"], message: string, statusCode = 502) {
+  constructor(
+    code: N8nClientError["code"],
+    message: string,
+    statusCode = 502,
+    upstreamStatus?: number
+  ) {
     super(message);
     this.name = "N8nClientError";
     this.code = code;
     this.statusCode = statusCode;
+    this.upstreamStatus = upstreamStatus;
   }
 }
 
@@ -20,10 +27,15 @@ export type N8nClientConfig = {
   maxRetries: number;
 };
 
+export type N8nActionItemsResult = {
+  rows: Array<Record<string, unknown>>;
+  status: number;
+};
+
 export class N8nClient {
   constructor(private readonly config: N8nClientConfig) {}
 
-  async fetchActionItems(query: ActionItemsQuery): Promise<Array<Record<string, unknown>>> {
+  async fetchActionItems(query: ActionItemsQuery): Promise<N8nActionItemsResult> {
     const url = new URL(this.config.url);
     url.searchParams.set("status", query.status);
     url.searchParams.set("limit", String(query.limit));
@@ -44,11 +56,19 @@ export class N8nClient {
         });
 
         if (!response.ok) {
-          throw new N8nClientError("N8N_UPSTREAM_ERROR", "n8n upstream returned an error");
+          throw new N8nClientError(
+            "N8N_UPSTREAM_ERROR",
+            "n8n upstream returned an error",
+            502,
+            response.status
+          );
         }
 
         const body = (await response.json()) as unknown;
-        return normalizeN8nRows(body);
+        return {
+          rows: normalizeN8nRows(body),
+          status: response.status
+        };
       } catch (error) {
         lastError = error;
         if (error instanceof DOMException && error.name === "TimeoutError") {

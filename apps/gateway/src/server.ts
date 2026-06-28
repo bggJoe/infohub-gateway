@@ -3,6 +3,7 @@ import { loadConfig, type AppConfig } from "./config";
 import { AuthError } from "./auth/auth-context";
 import { N8nClientError } from "./clients/n8n-client";
 import { createLoggerOptions } from "./logging/logger";
+import { registerRequestLogging } from "./logging/request-log";
 import { registerActionItemsRoute } from "./routes/action-items";
 import { registerHealthRoute } from "./routes/health";
 import { registerSecurityHeaders } from "./security/headers";
@@ -23,6 +24,7 @@ export async function buildServer(config: AppConfig = loadConfig()) {
   });
 
   registerSecurityHeaders(server);
+  registerRequestLogging(server);
   await registerHealthRoute(server);
   await registerActionItemsRoute(server, config);
 
@@ -32,20 +34,25 @@ export async function buildServer(config: AppConfig = loadConfig()) {
 
   server.setErrorHandler(async (error, request, reply) => {
     if (error instanceof AuthError) {
+      request.errorCode = error.code;
       request.log.warn({ error_code: error.code }, error.message);
       return reply.status(error.statusCode).send(errorResponse(error.code, error.message));
     }
 
     if (error instanceof ValidationError) {
+      request.errorCode = "BAD_REQUEST";
       request.log.warn({ error_code: "BAD_REQUEST" }, error.message);
       return reply.status(400).send(errorResponse("BAD_REQUEST", error.message));
     }
 
     if (error instanceof N8nClientError) {
+      request.errorCode = error.code;
+      request.n8nStatus = error.upstreamStatus;
       request.log.warn({ error_code: error.code }, error.message);
       return reply.status(error.statusCode).send(errorResponse(error.code, safeUpstreamMessage(error.code)));
     }
 
+    request.errorCode = "INTERNAL_ERROR";
     request.log.error({ error_code: "INTERNAL_ERROR" }, "Unhandled error");
     return reply.status(500).send(errorResponse("INTERNAL_ERROR", "Internal server error"));
   });
