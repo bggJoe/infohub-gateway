@@ -1,5 +1,6 @@
 import type { FastifyRequest } from "fastify";
-import { createRemoteJWKSet, jwtVerify } from "jose";
+import { createRemoteJWKSet, jwtVerify, jwksCache } from "jose";
+import type { JWKSCacheInput } from "jose";
 import type { AppConfig } from "../config";
 import type { AuthContext } from "./auth-context";
 import { AuthError } from "./auth-context";
@@ -7,7 +8,25 @@ import { isAllowedUser } from "./allowlist";
 
 const IAP_ISSUER = "https://cloud.google.com/iap";
 const IAP_JWKS_URL = new URL("https://www.gstatic.com/iap/verify/public_key-jwk");
-const jwks = createRemoteJWKSet(IAP_JWKS_URL);
+let testJwksCache: JWKSCacheInput | undefined;
+
+function getJwks(): ReturnType<typeof createRemoteJWKSet> {
+  if (testJwksCache) {
+    return createRemoteJWKSet(IAP_JWKS_URL, {
+      [jwksCache]: testJwksCache
+    });
+  }
+
+  return createRemoteJWKSet(IAP_JWKS_URL);
+}
+
+export function setIapJwksCacheForTests(cache?: JWKSCacheInput): void {
+  if (process.env.NODE_ENV !== "test") {
+    throw new Error("setIapJwksCacheForTests can only be used in tests");
+  }
+
+  testJwksCache = cache;
+}
 
 function getHeaderValue(request: FastifyRequest, headerName: string): string | undefined {
   const value = request.headers[headerName.toLowerCase()];
@@ -31,7 +50,7 @@ export async function authenticateIapUser(
   }
 
   try {
-    const result = await jwtVerify(assertion, jwks, {
+    const result = await jwtVerify(assertion, getJwks(), {
       issuer: IAP_ISSUER,
       audience: config.iapAudience,
       algorithms: ["ES256"]
