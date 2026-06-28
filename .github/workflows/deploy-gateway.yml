@@ -58,6 +58,17 @@ jobs:
       - name: Setup gcloud
         uses: google-github-actions/setup-gcloud@v2
 
+      - name: Prepare Cloud Run environment
+        working-directory: apps/gateway
+        run: |
+          cat > /tmp/infohub-gateway-env.yaml <<EOF
+          NODE_ENV: "production"
+          AUTH_MODE: "iap"
+          LOG_LEVEL: "info"
+          IAP_AUDIENCE: "${IAP_AUDIENCE}"
+          ALLOWED_USERS: "${ALLOWED_USERS}"
+          EOF
+
       - name: Deploy to Cloud Run
         working-directory: apps/gateway
         run: |
@@ -66,5 +77,5 @@ jobs:
             --region="${GCP_REGION}" \
             --source=. \
             --port=8080 \
-            --set-env-vars=NODE_ENV=production,AUTH_MODE=iap,LOG_LEVEL=info,IAP_AUDIENCE="${IAP_AUDIENCE}",ALLOWED_USERS="${ALLOWED_USERS}" \
+            --env-vars-file=/tmp/infohub-gateway-env.yaml \
             --update-secrets=N8N_ACTION_ITEMS_URL=N8N_ACTION_ITEMS_URL:latest,N8N_API_AUTH_HEADER_NAME=N8N_API_AUTH_HEADER_NAME:latest,N8N_API_AUTH_HEADER_VALUE=N8N_API_AUTH_HEADER_VALUE:latest

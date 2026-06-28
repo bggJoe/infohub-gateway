@@ -165,6 +165,8 @@ IAP_AUDIENCE
 ALLOWED_USERS
 ```
 
+`ALLOWED_USERS` may contain comma-separated addresses. The deploy workflow writes Cloud Run app configuration to an env-vars YAML file so commas are preserved correctly.
+
 ### Google Secret Manager
 
 Create these Secret Manager secrets in the target Google Cloud project:
