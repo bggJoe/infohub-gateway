@@ -85,9 +85,9 @@ jobs:
           service: ${{ vars.CLOUD_RUN_SERVICE }}
           region: ${{ vars.GCP_REGION }}
           image: ${{ steps.image.outputs.uri }}
-          service_account: ${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
           flags: >-
-            --no-allow-unauthenticated
+             --service-account=${{ vars.GCP_RUNTIME_SERVICE_ACCOUNT }}
+             --no-allow-unauthenticated
           env_vars: |
             AUTH_MODE=iap
             IAP_AUDIENCE=${{ secrets.IAP_AUDIENCE }}
