@@ -184,9 +184,9 @@ Valid IAP user in ALLOWED_USERS: 200
 GET /api/action-items?status=new&limit=50: returns only allowlisted fields
 GET /api/action-items?status=invalid: 400
 GET /api/action-items?limit=51: 400
-n8n unavailable or slow: safe upstream error without n8n URL or secret
+n8n unavailable or slow: safe upstream error without n8n URL, downstream JWT, private key, or legacy header secret
 ```
 
 ## Rotation
 
-Rotate n8n secrets by adding a new Secret Manager version. No code change is required.
+Rotate the Gateway downstream JWT private key by adding a new Secret Manager version and updating n8n to trust the corresponding public key. No code change is required.

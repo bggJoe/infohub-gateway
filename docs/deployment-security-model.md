@@ -39,7 +39,7 @@
 ### 1. 開發者
 你會知道：
 - 為什麼 production 一定要 `AUTH_MODE=iap`
-- 為什麼不能把 n8n secret 放進前端或 repo
+- 為什麼不能把 n8n URL、legacy header secret 或 downstream JWT private key 放進前端或 repo
 - 為什麼需要輸出白名單與資料脫敏
 
 ### 2. DevOps / 平台工程師
@@ -112,7 +112,7 @@
 │                    InfoHub Gateway App                          │
 │   - verify IAP JWT                                              │
 │   - enforce allowlist                                           │
-│   - call n8n with server-side secret                            │
+│   - call n8n with Gateway-signed downstream JWT                 │
 │   - redact output                                               │
 └─────────────────────────────────────────────────────────────────┘
                             ↓
@@ -128,10 +128,10 @@
 這個專案的核心問題不是「把 Node.js app 部署到 Cloud Run」而已。  
 真正要保護的是下面幾件事：
 
-### 1. 不讓前端直接持有 upstream secret
-如果 frontend 直接呼叫 n8n webhook，或直接持有 API key，風險很高：
+### 1. 不讓前端直接持有 upstream credential
+如果 frontend 直接呼叫 n8n webhook，或直接持有 URL、API key、header secret、JWT private key，風險很高：
 
-- key 容易洩露
+- credential 容易洩露
 - 無法有效限制請求參數
 - 使用者可以繞過後端約束直接打上游
 
@@ -382,8 +382,7 @@ OIDC / WIF 實際上把部署權限從：
 InfoHub Gateway 目前涉及的敏感資訊至少包括：
 
 - `N8N_ACTION_ITEMS_URL`
-- `N8N_API_AUTH_HEADER_NAME`
-- `N8N_API_AUTH_HEADER_VALUE`
+- `N8N_JWT_PRIVATE_KEY_PEM`
 
 這些值不應該：
 - 存在 repo
@@ -429,7 +428,8 @@ InfoHub Gateway 目前涉及的敏感資訊至少包括：
 ### 不適合放在 GitHub Variables 的
 真正敏感的值，例如：
 
-- n8n secret
+- downstream JWT private key
+- legacy n8n header secret
 - upstream private token
 - service account JSON key
 
@@ -524,7 +524,7 @@ OIDC / WIF 明顯更複雜：
 
 - 安全中介層
 - 有身份驗證要求
-- 有 upstream secret 管理需求
+- 有 upstream credential 管理需求
 - 要能長期維護與審查
 
 因此，多一點控制面複雜度，換來：
@@ -732,8 +732,8 @@ IAP + app auth 是否正常？
 
 ### Secret 層
 - [ ] `N8N_ACTION_ITEMS_URL` 已建於 Secret Manager
-- [ ] `N8N_API_AUTH_HEADER_NAME` 已建於 Secret Manager
-- [ ] `N8N_API_AUTH_HEADER_VALUE` 已建於 Secret Manager
+- [ ] `N8N_JWT_PRIVATE_KEY_PEM` 已建於 Secret Manager
+- [ ] n8n 已設定對應 public key 並驗證 Gateway-signed JWT
 
 ### 應用層
 - [ ] 驗證 `x-goog-iap-jwt-assertion`

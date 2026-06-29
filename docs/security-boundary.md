@@ -3,7 +3,7 @@
 ## 核心原則
 
 1. Frontend 不直接呼叫 n8n。
-2. Frontend 不持有 n8n API key / header secret / downstream JWT private key。
+2. Frontend 不持有 n8n URL / API key / header secret / downstream JWT private key。
 3. Gateway 是唯一可以呼叫 n8n Action Items API 的應用層元件。
 4. Gateway 必須驗證使用者身份。
 5. Gateway 必須做 email allowlist。
@@ -25,7 +25,7 @@ Route allowlist
   ↓
 Query validation
   ↓
-n8n server-to-server secret
+Gateway-signed downstream JWT
   ↓
 Output redaction
   ↓
@@ -46,8 +46,8 @@ Security headers
 ## 不可實作
 
 - 不可把 n8n URL 暴露給 frontend 使用。
-- 不可把 n8n secret 寫在 frontend。
-- 不可把 n8n secret 寫死在 repo。
+- 不可把 n8n URL、legacy header secret 或 downstream JWT private key 寫在 frontend。
+- 不可把 n8n URL、legacy header secret 或 downstream JWT private key 寫死在 repo。
 - 不可回傳 raw email body。
 - 不可回傳 attachment。
 - 不可支援 arbitrary Gmail query。

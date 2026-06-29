@@ -16,7 +16,7 @@ Data Table metadata
 ### Threats
 
 ```text
-Browser exfiltrates n8n secret or downstream JWT
+Browser exfiltrates n8n URL, legacy header secret, downstream JWT private key, or downstream JWT
 Unauthenticated user calls n8n webhook
 Forged identity header
 Prompt-injected email content appears in Dashboard
@@ -141,7 +141,8 @@ Production error responses must not include:
 ```text
 stack trace
 n8n URL
-n8n secret
+legacy n8n header secret
+downstream JWT private key
 downstream JWT
 raw upstream response
 ```
@@ -160,7 +161,7 @@ permissions:
 
 ### SC-012: Secret rotation
 
-n8n Gateway secret must be rotatable without code change.
+n8n Gateway downstream JWT private key must be rotatable without code change.
 
 ### SC-013: Future write API protection
 
@@ -177,8 +178,8 @@ no arbitrary field update
 
 ## 3. Security acceptance checklist
 
-- [ ] No n8n secret in frontend bundle.
-- [ ] No n8n secret in repo.
+- [ ] No n8n URL, legacy header secret, or downstream JWT private key in frontend bundle.
+- [ ] No n8n URL, legacy header secret, or downstream JWT private key in repo.
 - [ ] IAP JWT validation implemented.
 - [ ] `ALLOWED_USERS` enforced.
 - [ ] Unauthorized request fails closed.

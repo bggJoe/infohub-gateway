@@ -15,7 +15,7 @@ IAP protects Cloud Run endpoint
   ↓
 Gateway verifies IAP JWT
   ↓
-Gateway calls n8n Action Items API with server-side secret
+Gateway calls n8n Action Items API with Gateway-signed JWT
 ```
 
 ### 優點
@@ -23,7 +23,7 @@ Gateway calls n8n Action Items API with server-side secret
 - 與 Google identity / Gmail / Google Cloud 生態一致。
 - Cloud Run 可直接被 IAP 保護。
 - IAP 可以保護 `run.app` endpoint，避免只保護 Load Balancer 卻留下預設 URL。
-- Secret Manager 適合保存 n8n secret。
+- Secret Manager 適合保存 n8n URL 與 Gateway downstream JWT private key。
 - GitHub Actions 可使用 OIDC / WIF，避免長期 service account key。
 - Serverless，維運負擔低。
 

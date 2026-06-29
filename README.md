@@ -2,7 +2,7 @@
 
 本 spec package 是給 Codex 與人類 reviewer 閱讀的開發需求與技術規格。
 
-目標是建立一個具備資安防護能力的中介 Gateway，讓 Frontend Dashboard 不直接呼叫 n8n Webhook，也不持有 n8n secret。
+目標是建立一個具備資安防護能力的中介 Gateway，讓 Frontend Dashboard 不直接呼叫 n8n Webhook，也不持有 n8n URL、legacy header secret 或 downstream JWT private key。
 
 ## 推薦方案
 

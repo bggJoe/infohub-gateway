@@ -170,5 +170,5 @@ deploy to Cloud Run
 ### 9.4 Logging
 
 - [ ] Logs contain route / status / duration.
-- [ ] Logs do not contain n8n secret.
+- [ ] Logs do not contain downstream JWTs, JWT private keys, or legacy n8n header secrets.
 - [ ] Logs do not contain raw email body.

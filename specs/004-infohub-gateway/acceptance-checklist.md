@@ -28,7 +28,9 @@
 
 ## n8n
 
-- [ ] Gateway calls n8n using server-side secret only.
+- [ ] Gateway calls n8n using `Authorization: Bearer <gateway-signed-jwt>` in production.
+- [ ] Downstream JWT contains `iss`, `aud`, `sub`, `email`, `scope`, `method`, `path`, `iat`, `exp`, and `jti`.
+- [ ] Production rejects legacy `N8N_AUTH_MODE=header`.
 - [ ] n8n URL is not exposed to frontend.
 - [ ] n8n error is handled safely.
 - [ ] n8n timeout is handled safely.

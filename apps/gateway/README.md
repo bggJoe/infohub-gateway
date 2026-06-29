@@ -1,6 +1,6 @@
 # InfoHub Gateway
 
-Security-focused backend for InfoHub Dashboard. The Gateway authenticates the caller, enforces an email allowlist, calls the n8n Action Items API with a server-side secret, and returns only Dashboard-safe fields.
+Security-focused backend for InfoHub Dashboard. The Gateway authenticates the caller, enforces an email allowlist, calls the n8n Action Items API with a short-lived Gateway-signed JWT, and returns only Dashboard-safe fields.
 
 ## Local Development
 
@@ -173,7 +173,7 @@ n8n_status
 error_code
 ```
 
-Logs do not include full request headers, n8n secrets, raw email bodies, attachments, or raw n8n responses.
+Logs do not include full request headers, downstream JWTs, JWT private keys, legacy n8n header secrets, raw email bodies, attachments, or raw n8n responses.
 
 ## Test And Build
 

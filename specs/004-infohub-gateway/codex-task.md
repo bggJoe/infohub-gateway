@@ -166,7 +166,7 @@ Do not trust unsigned identity headers alone.
 
 Must pass:
 
-- No n8n secret in frontend.
+- No n8n URL, legacy header secret, or downstream JWT private key in frontend.
 - No raw email body in response.
 - No arbitrary n8n path.
 - No arbitrary query passthrough.

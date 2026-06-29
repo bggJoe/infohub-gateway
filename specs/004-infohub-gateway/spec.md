@@ -20,7 +20,7 @@ Gateway 必須：
 4. 呼叫 n8n Action Items API。
 5. 過濾與遮罩 n8n 回傳資料。
 6. 回傳 Dashboard-safe JSON。
-7. 不讓 Frontend 直接接觸 n8n secret。
+7. 不讓 Frontend 直接接觸 n8n URL、legacy header secret 或 downstream JWT private key。
 
 ## 3. Non-goals
 
@@ -256,7 +256,9 @@ error_code
 不得 log：
 
 ```text
-n8n secret
+n8n URL
+legacy n8n header secret
+downstream JWT private key
 raw email body
 full request headers
 full n8n response
